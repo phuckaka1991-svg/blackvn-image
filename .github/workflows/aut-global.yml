@@ -1,0 +1,21 @@
+name: AUT - trigger GLOBAL LAB
+
+on:
+  schedule:
+    - cron: "30 8 * * 5"   # 15:30 GMT+7 thứ 6
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake GLOBAL repo
+        env:
+          PAT: ${{ secrets.AUT_PAT }}
+        run: |
+          curl -s -o /dev/null -w "%{http_code}\n" \
+            -X POST \
+            -H "Authorization: Bearer ${PAT}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/phuckaka1991-svg/blackvn-global-lab/actions/workflows/global.yml/dispatches \
+            -d '{"ref":"main"}'
