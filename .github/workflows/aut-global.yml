@@ -11,7 +11,7 @@ jobs:
     env:
       OWNER: phuckaka1991-svg
       REPO:  blackvn-global-lab
-      WORKFLOW_FILE: global.yml   # PHẢI ĐÚNG tên file trong .github/workflows/ của repo con
+      WORKFLOW_FILE: global-lab.yml   # PHẢI ĐÚNG tên file trong .github/workflows/ của repo con
       REF:   main                 # Nhánh tồn tại ở repo con
     steps:
       - name: Check AUT_PAT present
