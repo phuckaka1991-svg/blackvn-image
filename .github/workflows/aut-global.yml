@@ -8,14 +8,40 @@ on:
 jobs:
   trigger:
     runs-on: ubuntu-latest
+    env:
+      OWNER: phuckaka1991-svg
+      REPO:  blackvn-global-lab
+      WORKFLOW_FILE: global.yml   # PHẢI ĐÚNG tên file trong .github/workflows/ của repo con
+      REF:   main                 # Nhánh tồn tại ở repo con
     steps:
-      - name: Wake GLOBAL repo
-        env:
-          PAT: ${{ secrets.AUT_PAT }}
+      - name: Check AUT_PAT present
         run: |
-          curl -s -o /dev/null -w "%{http_code}\n" \
-            -X POST \
-            -H "Authorization: Bearer ${PAT}" \
+          test -n "${{ secrets.AUT_PAT }}" || { echo "❌ Missing AUT_PAT secret"; exit 1; }
+
+      - name: Resolve workflow ID from file name
+        run: |
+          curl -sS -H "Authorization: Bearer ${{ secrets.AUT_PAT }}" \
+               -H "Accept: application/vnd.github+json" \
+               "https://api.github.com/repos/$OWNER/$REPO/actions/workflows/$WORKFLOW_FILE" \
+               | tee resp.json
+          id=$(grep -o '"id":[ ]*[0-9]\+' resp.json | head -n1 | sed 's/[^0-9]//g')
+          if [ -z "$id" ]; then
+            echo "❌ Không tìm thấy workflow ($WORKFLOW_FILE) – sai tên file hoặc PAT thiếu quyền."
+            cat resp.json
+            exit 1
+          fi
+          echo "WORKFLOW_ID=$id" >> $GITHUB_ENV
+          echo "✅ Workflow ID: $id"
+
+      - name: Dispatch workflow by ID
+        run: |
+          echo "Dispatch to $OWNER/$REPO ref=$REF id=$WORKFLOW_ID"
+          code=$(curl -sS -o /tmp/resp.txt -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer ${{ secrets.AUT_PAT }}" \
             -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/phuckaka1991-svg/blackvn-global-lab/actions/workflows/global.yml/dispatches \
-            -d '{"ref":"main"}'
+            "https://api.github.com/repos/$OWNER/$REPO/actions/workflows/$WORKFLOW_ID/dispatches" \
+            -d "{\"ref\":\"$REF\"}")
+          echo "HTTP $code"
+          cat /tmp/resp.txt || true
+          # Thành công phải là 204 No Content
+          test "$code" = "204"
