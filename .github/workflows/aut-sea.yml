@@ -2,7 +2,7 @@ name: AUT - trigger SEA
 
 on:
   schedule:
-    - cron: "30 1 * * 4"   # 08:30 GMT+7 thứ 5 (cron chạy theo UTC)
+    - cron: "05 1 * * 4"   # 08:30 GMT+7 thứ 5 (cron chạy theo UTC)
   workflow_dispatch:
 
 jobs:
